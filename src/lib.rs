@@ -8,9 +8,9 @@ pub struct PackedBattleStructure {
     flags: u8,
     main_camera: u8,
     secondary_camera: u8,
-    visible_enemies: u8,
-    loaded_enemies: u8,
-    targetable_enemies: u8,
+    not_visible_enemies: u8,
+    not_loaded_enemies: u8,
+    not_targetable_enemies: u8,
     enabled_enemies: u8,
     enemies_coords: [Coordinate; 8],
     id_enemies: [u8; 8],
@@ -64,9 +64,9 @@ pub struct Enemy {
     id: u8,
     level: u8,
     enabled: bool,
-    visible: bool,
-    loaded: bool,
-    targetable: bool,
+    invisible: bool,
+    not_loaded: bool,
+    untargetable: bool,
     coordinate: Coordinate,
     unknown_1: u16,
     unknown_2: u16,
@@ -134,9 +134,9 @@ impl PackedBattleStructure {
             id: self.id_enemies[index] - 0x10,
             level: self.enemy_level[index],
             enabled: (self.enabled_enemies & mask) > 0,
-            loaded: (self.loaded_enemies & mask) > 0,
-            visible: (self.visible_enemies & mask) > 0,
-            targetable: (self.targetable_enemies & mask) > 0,
+            not_loaded: (self.not_loaded_enemies & mask) > 0,
+            invisible: (self.not_visible_enemies & mask) > 0,
+            untargetable: (self.not_targetable_enemies & mask) > 0,
             coordinate: self.enemies_coords[index].clone(),
             unknown_1: self.unknown_1[index],
             unknown_2: self.unknown_2[index],
@@ -204,9 +204,9 @@ mod test {
         assert_eq!(battle_structure.enemies[0].id, 71);
         assert_eq!(battle_structure.enemies[0].level, 255);
         assert!(battle_structure.enemies[0].enabled);
-        assert!(!battle_structure.enemies[0].visible);
-        assert!(!battle_structure.enemies[0].targetable);
-        assert!(!battle_structure.enemies[0].loaded);
+        assert!(!battle_structure.enemies[0].invisible);
+        assert!(!battle_structure.enemies[0].untargetable);
+        assert!(!battle_structure.enemies[0].not_loaded);
         assert_eq!(battle_structure.enemies[0].coordinate.x, 1100);
         assert_eq!(battle_structure.enemies[0].coordinate.y, 0);
         assert_eq!(battle_structure.enemies[0].coordinate.z, -3300);
@@ -218,9 +218,9 @@ mod test {
         assert_eq!(battle_structure.enemies[4].id, 0);
         assert_eq!(battle_structure.enemies[4].level, 255);
         assert!(!battle_structure.enemies[4].enabled);
-        assert!(!battle_structure.enemies[4].visible);
-        assert!(!battle_structure.enemies[4].targetable);
-        assert!(!battle_structure.enemies[4].loaded);
+        assert!(!battle_structure.enemies[4].invisible);
+        assert!(!battle_structure.enemies[4].untargetable);
+        assert!(!battle_structure.enemies[4].not_loaded);
         assert_eq!(battle_structure.enemies[4].coordinate.x, -1700);
         assert_eq!(battle_structure.enemies[4].coordinate.y, 0);
         assert_eq!(battle_structure.enemies[4].coordinate.z, -5700);
