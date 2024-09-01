@@ -186,6 +186,48 @@ mod test {
         let battle_structure = BattleStructure::from(packed_battle_structure);
         println!("{:?}", battle_structure);
         assert_eq!(battle_structure.stage_id, 6);
+
+        assert!(battle_structure.flags.cannot_escape);
+        assert!(battle_structure.flags.scripted_battle);
+        assert!(!battle_structure.flags.no_exp);
+        assert!(!battle_structure.flags.force_back_attack);
+        assert!(!battle_structure.flags.force_surprise_attack);
+        assert!(!battle_structure.flags.show_timer);
+        assert!(!battle_structure.flags.disable_exp_screen);
+        assert!(!battle_structure.flags.disable_win_fanfare);
+
+        assert_eq!(battle_structure.main_camera.number, 0);
+        assert_eq!(battle_structure.main_camera.animation, 0);
+        assert_eq!(battle_structure.secondary_camera.number, 1);
+        assert_eq!(battle_structure.secondary_camera.animation, 3);
+
+        assert_eq!(battle_structure.enemies[0].id, 71);
+        assert_eq!(battle_structure.enemies[0].level, 255);
+        assert!(battle_structure.enemies[0].enabled);
+        assert!(!battle_structure.enemies[0].visible);
+        assert!(!battle_structure.enemies[0].targetable);
+        assert!(!battle_structure.enemies[0].loaded);
+        assert_eq!(battle_structure.enemies[0].coordinate.x, 1100);
+        assert_eq!(battle_structure.enemies[0].coordinate.y, 0);
+        assert_eq!(battle_structure.enemies[0].coordinate.z, -3300);
+        assert_eq!(battle_structure.enemies[0].unknown_1, 0x7f70);
+        assert_eq!(battle_structure.enemies[0].unknown_2, 0x117);
+        assert_eq!(battle_structure.enemies[0].unknown_3, 0x490);
+        assert_eq!(battle_structure.enemies[0].unknown_4, 0x1);
+
+        assert_eq!(battle_structure.enemies[4].id, 0);
+        assert_eq!(battle_structure.enemies[4].level, 255);
+        assert!(!battle_structure.enemies[4].enabled);
+        assert!(!battle_structure.enemies[4].visible);
+        assert!(!battle_structure.enemies[4].targetable);
+        assert!(!battle_structure.enemies[4].loaded);
+        assert_eq!(battle_structure.enemies[4].coordinate.x, -1700);
+        assert_eq!(battle_structure.enemies[4].coordinate.y, 0);
+        assert_eq!(battle_structure.enemies[4].coordinate.z, -5700);
+        assert_eq!(battle_structure.enemies[4].unknown_1, 0xc8);
+        assert_eq!(battle_structure.enemies[4].unknown_2, 0xc8);
+        assert_eq!(battle_structure.enemies[4].unknown_3, 0xea60);
+        assert_eq!(battle_structure.enemies[4].unknown_4, 0x2);
     }
 }
 
