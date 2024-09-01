@@ -1,0 +1,13 @@
+[package]
+name = "ff8-battle-structure-gui"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.86"
+binrw = "0.14.0"
+iced = "0.12.1"
+rfd = "0.14.1"
+
+[dev-dependencies]
+hex-literal = "0.4.1"
