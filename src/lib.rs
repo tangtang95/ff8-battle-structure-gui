@@ -28,10 +28,7 @@ pub struct Coordinate {
     z: i16,
 }
 
-pub enum EnemyIndex {
-    One, Two, Three, Four, Five, Six, Seven, Eight
-}
-
+#[derive(Debug)]
 pub struct BattleStructure {
     stage_id: u8,
     flags: BattleFlags,
@@ -41,6 +38,7 @@ pub struct BattleStructure {
 }
 
 /// Flags ordered from LSB to MSB
+#[derive(Debug)]
 pub struct BattleFlags {
     cannot_escape: bool,
     disable_win_fanfare: bool,
@@ -52,15 +50,17 @@ pub struct BattleFlags {
     scripted_battle: bool,
 }
 
+#[derive(Debug)]
 pub struct CameraAttributes {
     /// camera number of size u4
     number: u8,
-    /// camera number of size u4
+    /// camera animation of size u4
     animation: u8,
 }
 
+/// Enemy information where id is equal to PackedBattleStructure.id_enemies[idx] - 0x10
+#[derive(Debug)]
 pub struct Enemy {
-    /// id of enemy equals to PackedBattleStructure.id_enemies[idx] - 0x10
     id: u8,
     level: u8,
     enabled: bool,
@@ -113,37 +113,21 @@ impl From<PackedBattleStructure> for BattleStructure {
             main_camera: value.main_camera.into(),
             secondary_camera: value.secondary_camera.into(),
             enemies: [
-                value.enemy(EnemyIndex::One),
-                value.enemy(EnemyIndex::Two),
-                value.enemy(EnemyIndex::Three),
-                value.enemy(EnemyIndex::Four),
-                value.enemy(EnemyIndex::Five),
-                value.enemy(EnemyIndex::Six),
-                value.enemy(EnemyIndex::Seven),
-                value.enemy(EnemyIndex::Eight),
+                value.enemy(0),
+                value.enemy(1),
+                value.enemy(2),
+                value.enemy(3),
+                value.enemy(4),
+                value.enemy(5),
+                value.enemy(6),
+                value.enemy(7),
             ]
         }
     }
 }
 
-impl From<EnemyIndex> for usize {
-    fn from(value: EnemyIndex) -> Self {
-        match value {
-            EnemyIndex::One => 0,
-            EnemyIndex::Two => 1,
-            EnemyIndex::Three => 2,
-            EnemyIndex::Four => 3,
-            EnemyIndex::Five => 4,
-            EnemyIndex::Six => 5,
-            EnemyIndex::Seven => 6,
-            EnemyIndex::Eight => 7,
-        }
-    }
-}
-
 impl PackedBattleStructure {
-    pub fn enemy(&self, index: EnemyIndex) -> Enemy {
-        let index = usize::from(index);
+    pub fn enemy(&self, index: usize) -> Enemy {
         let mask = 0x80 >> index;
 
         Enemy {
@@ -200,6 +184,7 @@ mod test {
     fn test_parse_battle_structure() {
         let packed_battle_structure = parse_battle_structure(BYTES).unwrap();
         let battle_structure = BattleStructure::from(packed_battle_structure);
+        println!("{:?}", battle_structure);
         assert_eq!(battle_structure.stage_id, 6);
     }
 }
