@@ -31,7 +31,13 @@ impl Application for MyApp {
     type Flags = ();
 
     fn new(_flags: Self::Flags) -> (Self, Command<Self::Message>) {
-        (Self { counter: 0, battle_structure: None }, Command::none())
+        (
+            Self {
+                counter: 0,
+                battle_structure: None,
+            },
+            Command::none(),
+        )
     }
 
     fn title(&self) -> String {
@@ -90,7 +96,9 @@ async fn read_scene_out_file() -> anyhow::Result<Vec<BattleStructure>> {
     let mut battle_structure_list = Vec::with_capacity(BATTLE_STRUCTURE_NUMBER);
     for i in 0..BATTLE_STRUCTURE_NUMBER {
         let offset = i * size_of::<PackedBattleStructure>();
-        let packed_bs = PackedBattleStructure::try_from_bytes(&bytes[offset..offset + size_of::<PackedBattleStructure>()])?;
+        let packed_bs = PackedBattleStructure::try_from_bytes(
+            &bytes[offset..offset + size_of::<PackedBattleStructure>()],
+        )?;
         battle_structure_list.push(packed_bs.into_battle_structure());
     }
     Ok(battle_structure_list)
