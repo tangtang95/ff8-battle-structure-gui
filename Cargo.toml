@@ -4,9 +4,13 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+egui = "0.28.1"
+eframe = { version = "0.28.1", features = [
+    "wgpu"
+] }
+async-std = "1.13.0"
 anyhow = "1.0.86"
 binrw = "0.14.0"
-iced = "0.12.1"
 rfd = "0.14.1"
 
 [dev-dependencies]

@@ -25,55 +25,55 @@ pub struct PackedBattleStructure {
 #[derive(BinRead, BinWrite, Debug, Clone)]
 #[brw(little)]
 pub struct Coordinate {
-    x: i16,
-    y: i16,
-    z: i16,
+    pub x: i16,
+    pub y: i16,
+    pub z: i16,
 }
 
 #[derive(Debug)]
 pub struct BattleStructure {
-    stage_id: u8,
-    flags: BattleFlags,
-    main_camera: CameraAttributes,
-    secondary_camera: CameraAttributes,
-    enemies: [Enemy; 8],
+    pub stage_id: u8,
+    pub flags: BattleFlags,
+    pub main_camera: CameraAttributes,
+    pub secondary_camera: CameraAttributes,
+    pub enemies: [Enemy; 8],
 }
 
 /// Flags ordered from LSB to MSB
 #[derive(Debug)]
 pub struct BattleFlags {
-    cannot_escape: bool,
-    disable_win_fanfare: bool,
-    show_timer: bool,
-    no_exp: bool,
-    disable_exp_screen: bool,
-    force_surprise_attack: bool,
-    force_back_attack: bool,
-    scripted_battle: bool,
+    pub cannot_escape: bool,
+    pub disable_win_fanfare: bool,
+    pub show_timer: bool,
+    pub no_exp: bool,
+    pub disable_exp_screen: bool,
+    pub force_surprise_attack: bool,
+    pub force_back_attack: bool,
+    pub scripted_battle: bool,
 }
 
 #[derive(Debug)]
 pub struct CameraAttributes {
     /// camera number of size u4
-    number: u8,
+    pub number: u8,
     /// camera animation of size u4
-    animation: u8,
+    pub animation: u8,
 }
 
 /// Enemy information where id is equal to PackedBattleStructure.id_enemies[idx] - 0x10
 #[derive(Debug, Clone)]
 pub struct Enemy {
-    id: u8,
-    level: u8,
-    enabled: bool,
-    invisible: bool,
-    not_loaded: bool,
-    untargetable: bool,
-    coordinate: Coordinate,
-    unknown_1: u16,
-    unknown_2: u16,
-    unknown_3: u16,
-    unknown_4: u8,
+    pub id: u8,
+    pub level: u8,
+    pub enabled: bool,
+    pub invisible: bool,
+    pub not_loaded: bool,
+    pub untargetable: bool,
+    pub coordinate: Coordinate,
+    pub unknown_1: u16,
+    pub unknown_2: u16,
+    pub unknown_3: u16,
+    pub unknown_4: u8,
 }
 
 impl PackedBattleStructure {
@@ -150,6 +150,7 @@ impl PackedBattleStructure {
 }
 
 impl BattleStructure {
+
     pub fn as_packed_bytes(&self) -> anyhow::Result<Vec<u8>> {
         let packed_battle_structure = PackedBattleStructure {
             stage_id: self.stage_id,
