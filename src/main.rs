@@ -21,7 +21,7 @@ enum AppMessage {
 
 struct MyApp {
     counter: usize,
-    battle_structure: Option<[BattleStructure; BATTLE_STRUCTURE_NUMBER]>,
+    battle_structure: Vec<BattleStructure>,
 }
 
 impl Application for MyApp {
@@ -34,7 +34,7 @@ impl Application for MyApp {
         (
             Self {
                 counter: 0,
-                battle_structure: None,
+                battle_structure: Vec::new(),
             },
             Command::none(),
         )
@@ -49,7 +49,9 @@ impl Application for MyApp {
             AppMessage::ButtonPressed => {
                 Command::perform(read_scene_out_file(), |battle_structure_list| {
                     match battle_structure_list {
-                        Ok(battle_structure_list) => AppMessage::DoNothing,
+                        Ok(battle_structure_list) => {
+                            AppMessage::DoNothing
+                        },
                         Err(_) => AppMessage::DoNothing,
                     }
                 })
@@ -85,8 +87,7 @@ impl Application for MyApp {
 
 async fn read_scene_out_file() -> anyhow::Result<Vec<BattleStructure>> {
     let file_handle = AsyncFileDialog::new()
-        .add_filter("text", &["txt", "rs"])
-        .add_filter("rust", &["rs", "toml"])
+        .add_filter("scene.out", &["out"])
         .set_directory("/")
         .pick_file()
         .await
