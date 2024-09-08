@@ -1,6 +1,6 @@
 [package]
 name = "kyactus-ff8"
-description = "Command line app to pack a single directory into an IRO archive (FF7 mod manager format)"
+description = "FFVIII Battle Structure Editor for scene.out"
 repository = "https://github.com/tangtang95/ff8-battle-structure-gui"
 authors = ["Tangtang Zhou <tangtang2995@gmail.com>"]
 categories = ["gui"]
