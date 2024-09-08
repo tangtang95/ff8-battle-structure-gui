@@ -4,7 +4,7 @@ use ff8_battle_structure_gui::library::{
     battle_names::{ENEMY_NAMES, STAGE_NAMES},
     battle_structure::{BattleStructure, Enemy, PackedBattleStructure},
 };
-use rfd::AsyncFileDialog;
+use rfd::{AsyncFileDialog, AsyncMessageDialog};
 use std::{
     future::Future,
     sync::mpsc::{channel, Receiver, Sender},
@@ -49,7 +49,11 @@ impl eframe::App for BattleStructureApp {
                     self.battle_structure_index = 0;
                     self.enemy_selected_index = 0;
                 }
-                Err(_) => todo!(),
+                Err(err) => {
+                    execute(async move {
+                        error_dialog(&err.to_string()).await;
+                    });
+                }
             }
         }
 
@@ -78,7 +82,11 @@ impl eframe::App for BattleStructureApp {
                             ui.close_menu();
                         }
 
-                        if ui.button("Save as...").clicked() {
+                        let save_as_enabled = !self.battle_structure_list.is_empty();
+                        if ui
+                            .add_enabled(save_as_enabled, egui::Button::new("Save as..."))
+                            .clicked()
+                        {
                             let task = rfd::AsyncFileDialog::new().save_file();
                             match write_packed_battle_structure(&self.battle_structure_list) {
                                 Ok(contents) => {
@@ -89,7 +97,11 @@ impl eframe::App for BattleStructureApp {
                                         }
                                     });
                                 }
-                                Err(_) => todo!()
+                                Err(err) => {
+                                    execute(async move {
+                                        error_dialog(&err.to_string()).await;
+                                    });
+                                }
                             };
                             ui.close_menu();
                         }
@@ -117,7 +129,9 @@ impl eframe::App for BattleStructureApp {
                             enemies_contents(ui, battle_structure, &mut self.enemy_selected_index)
                         });
                     }
-                    None => todo!(),
+                    None => {
+                        ui.label("Battle structure not found!");
+                    }
                 }
             }
         });
@@ -217,10 +231,14 @@ fn enemies_contents(
 
         ui.vertical(
             |ui| match battle_structure.enemies.get_mut(*enemy_selected_index) {
-                Some(enemy) => enemy_contents(ui, enemy),
-                None => todo!(),
+                Some(enemy) => {
+                    enemy_contents(ui, enemy);
+                }
+                None => {
+                    ui.label("enemy not found!");
+                }
             },
-        )
+        );
     });
 }
 
@@ -280,6 +298,15 @@ fn frame() -> egui::Frame {
         .inner_margin(8.0)
 }
 
+fn error_dialog(message: &str) -> impl Future<Output = rfd::MessageDialogResult> {
+    AsyncMessageDialog::new()
+        .set_level(rfd::MessageLevel::Error)
+        .set_buttons(rfd::MessageButtons::Ok)
+        .set_title("Error")
+        .set_description(message)
+        .show()
+}
+
 fn execute<F: Future<Output = ()> + Send + 'static>(f: F) {
     task::spawn(f);
 }
@@ -301,6 +328,14 @@ fn write_packed_battle_structure(
 ) -> anyhow::Result<Vec<u8>> {
     let mut bytes: Vec<u8> =
         Vec::with_capacity(BATTLE_STRUCTURE_NUMBER * size_of::<PackedBattleStructure>());
+
+    if battle_structure_list.len() != BATTLE_STRUCTURE_NUMBER {
+        return Err(anyhow::anyhow!(format!(
+            "Battle structure size is incorrect: {}",
+            battle_structure_list.len()
+        )));
+    }
+
     for battle_structure in battle_structure_list {
         bytes.extend_from_slice(battle_structure.as_packed_bytes()?.as_ref());
     }
