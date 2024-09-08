@@ -4,7 +4,7 @@ on: [push]
 
 env:
   RUST_VERSION: stable
-  APP_NAME: kyactus
+  APP_NAME: kyactus-ff8
 
 jobs:
   build:
