@@ -1,5 +1,11 @@
 [package]
 name = "ff8-battle-structure-gui"
+description = "Command line app to pack a single directory into an IRO archive (FF7 mod manager format)"
+repository = "https://github.com/tangtang95/ff8-battle-structure-gui"
+authors = ["Tangtang Zhou <tangtang2995@gmail.com>"]
+categories = ["gui"]
+keywords = ["gui", "ff8", "editor"]
+license = "MIT"
 version = "0.1.0"
 edition = "2021"
 
