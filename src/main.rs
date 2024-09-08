@@ -1,6 +1,9 @@
 use async_std::task;
-use egui::Context;
-use ff8_battle_structure_gui::library::battle_structure::{BattleStructure, PackedBattleStructure};
+use egui::{Color32, Context};
+use ff8_battle_structure_gui::library::{
+    battle_names::{ENEMY_NAMES, STAGE_NAMES},
+    battle_structure::{BattleStructure, Enemy, PackedBattleStructure},
+};
 use rfd::AsyncFileDialog;
 use std::{
     future::Future,
@@ -14,18 +17,18 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "FF8 Battle Structure App",
         native_options,
-        Box::new(|cc| Ok(Box::new(BSApp::new(cc)))),
+        Box::new(|cc| Ok(Box::new(BattleStructureApp::new(cc)))),
     )
 }
 
-pub struct BSApp {
+pub struct BattleStructureApp {
     file_bytes_channel: (Sender<Vec<u8>>, Receiver<Vec<u8>>),
     battle_structure_list: Vec<BattleStructure>,
     battle_structure_index: usize,
     enemy_selected_index: usize,
 }
 
-impl BSApp {
+impl BattleStructureApp {
     /// Called once before the first frame.
     pub fn new(_cc: &eframe::CreationContext<'_>) -> Self {
         Self {
@@ -37,7 +40,7 @@ impl BSApp {
     }
 }
 
-impl eframe::App for BSApp {
+impl eframe::App for BattleStructureApp {
     fn update(&mut self, ctx: &Context, _frame: &mut eframe::Frame) {
         if let Ok(bytes) = self.file_bytes_channel.1.try_recv() {
             match read_battle_structures(&bytes) {
@@ -97,7 +100,23 @@ impl eframe::App for BSApp {
                     .get_mut(self.battle_structure_index)
                 {
                     Some(battle_structure) => {
-                        ui.label("stage id: ".to_string() + &battle_structure.stage_id.to_string()); // TODO: fix stage id
+                        egui::ComboBox::from_label("Battle stage")
+                            .selected_text(
+                                STAGE_NAMES
+                                    .get(battle_structure.stage_id as usize)
+                                    .unwrap_or(&"Invalid Stage Id!")
+                                    .to_string(),
+                            )
+                            .show_ui(ui, |ui| {
+                                (0..STAGE_NAMES.len()).for_each(|i| {
+                                    ui.selectable_value(
+                                        &mut battle_structure.stage_id,
+                                        i as u8,
+                                        STAGE_NAMES[i],
+                                    );
+                                });
+                            });
+
                         ui.checkbox(&mut battle_structure.flags.cannot_escape, "Cannot escape");
                         ui.checkbox(&mut battle_structure.flags.no_exp, "No exp gained");
                         ui.checkbox(
@@ -140,63 +159,107 @@ impl eframe::App for BSApp {
                             )
                             .text("Secondary camera animation"),
                         );
-                        ui.vertical(|ui| {
-                            for i in 0..8 {
-                                ui.selectable_value(
-                                    &mut self.enemy_selected_index,
-                                    i,
-                                    format!("Enemy {i}"),
-                                );
-                            }
-                        });
 
-                        match battle_structure.enemies.get_mut(self.enemy_selected_index) {
-                            Some(enemy) => {
-                                ui.add(egui::Slider::new(&mut enemy.level, 0..=255).text("Level"));
-                                ui.label(format!("Enemy id: {}", enemy.id)); // TODO: fix enemy id
-                                ui.checkbox(&mut enemy.enabled, "Enabled");
-                                ui.checkbox(&mut enemy.not_loaded, "NOT loaded");
-                                ui.checkbox(&mut enemy.invisible, "NOT visible");
-                                ui.checkbox(&mut enemy.untargetable, "NOT targetable");
+                        egui::Frame::none()
+                            .rounding(egui::Rounding::from(4.0))
+                            .stroke(egui::Stroke::new(1.0, egui::Color32::DARK_GRAY))
+                            .inner_margin(8.0)
+                            .show(ui, |ui| {
+                                ui.horizontal(|ui| {
+                                    ui.vertical(|ui| {
+                                        for i in 0..battle_structure.enemies.len() {
+                                            let enemy = &battle_structure.enemies[i];
+                                            let enemy_name = format!("{i}. {}", *ENEMY_NAMES
+                                                .get(enemy.id as usize)
+                                                .unwrap_or(&"Invalid enemy name!"));
+                                            let enemy_name = if enemy.enabled {
+                                                enemy_name.to_string()
+                                            } else {
+                                                enemy_name + " (disabled)"
+                                            };
+                                            let text_color = if enemy.enabled {
+                                                Color32::PLACEHOLDER
+                                            } else {
+                                                Color32::DARK_GRAY
+                                            };
+                                            ui.selectable_value(
+                                                &mut self.enemy_selected_index,
+                                                i,
+                                                egui::RichText::new(enemy_name).color(text_color),
+                                            );
+                                        }
+                                    });
 
-                                ui.add(
-                                    egui::Slider::new(&mut enemy.coordinate.x, i16::MIN..=i16::MAX)
-                                        .text("X"),
-                                );
-                                ui.add(
-                                    egui::Slider::new(&mut enemy.coordinate.y, i16::MIN..=i16::MAX)
-                                        .text("Y"),
-                                );
-                                ui.add(
-                                    egui::Slider::new(&mut enemy.coordinate.z, i16::MIN..=i16::MAX)
-                                        .text("Z"),
-                                );
-
-                                ui.add(
-                                    egui::Slider::new(&mut enemy.unknown_1, 0..=u16::MAX)
-                                        .text("Unknown 1").hexadecimal(1, false, true),
-                                );
-                                ui.add(
-                                    egui::Slider::new(&mut enemy.unknown_2, 0..=u16::MAX)
-                                        .text("Unknown 2").hexadecimal(1, false, true),
-                                );
-                                ui.add(
-                                    egui::Slider::new(&mut enemy.unknown_3, 0..=u16::MAX)
-                                        .text("Unknown 3").hexadecimal(1, false, true),
-                                );
-                                ui.add(
-                                    egui::Slider::new(&mut enemy.unknown_4, 0..=u8::MAX)
-                                        .text("Unknown 4").hexadecimal(1, false, true),
-                                );
-                            }
-                            None => todo!(),
-                        }
+                                    ui.vertical(|ui| {
+                                        match battle_structure
+                                            .enemies
+                                            .get_mut(self.enemy_selected_index)
+                                        {
+                                            Some(enemy) => enemy_contents(ui, enemy),
+                                            None => todo!(),
+                                        }
+                                    })
+                                })
+                            });
                     }
                     None => todo!(),
                 }
             }
         });
     }
+}
+
+fn enemy_contents(ui: &mut egui::Ui, enemy: &mut Enemy) {
+    egui::Frame::none()
+        .rounding(egui::Rounding::from(4.0))
+        .stroke(egui::Stroke::new(1.0, egui::Color32::DARK_GRAY))
+        .inner_margin(8.0)
+        .show(ui, |ui| {
+            egui::ComboBox::from_label("Enemy")
+                .selected_text(
+                    ENEMY_NAMES
+                        .get(enemy.id as usize)
+                        .unwrap_or(&"Invalid enemy id!")
+                        .to_string(),
+                )
+                .show_ui(ui, |ui| {
+                    (0..ENEMY_NAMES.len()).for_each(|i| {
+                        ui.selectable_value(&mut enemy.id, i as u8, ENEMY_NAMES[i]);
+                    });
+                });
+            ui.add(egui::Slider::new(&mut enemy.level, 0..=255).text("Level"));
+            ui.checkbox(&mut enemy.enabled, "Enabled");
+            ui.checkbox(&mut enemy.not_loaded, "NOT loaded");
+            ui.checkbox(&mut enemy.invisible, "NOT visible");
+            ui.checkbox(&mut enemy.untargetable, "NOT targetable");
+
+            ui.add(egui::Slider::new(&mut enemy.coordinate.x, i16::MIN..=i16::MAX).text("X"));
+            ui.add(egui::Slider::new(&mut enemy.coordinate.y, i16::MIN..=i16::MAX).text("Y"));
+            ui.add(egui::Slider::new(&mut enemy.coordinate.z, i16::MIN..=i16::MAX).text("Z"));
+
+            ui.collapsing("Advanced options", |ui| {
+                ui.add(
+                    egui::Slider::new(&mut enemy.unknown_1, 0..=u16::MAX)
+                        .text("Unknown 1")
+                        .hexadecimal(1, false, true),
+                );
+                ui.add(
+                    egui::Slider::new(&mut enemy.unknown_2, 0..=u16::MAX)
+                        .text("Unknown 2")
+                        .hexadecimal(1, false, true),
+                );
+                ui.add(
+                    egui::Slider::new(&mut enemy.unknown_3, 0..=u16::MAX)
+                        .text("Unknown 3")
+                        .hexadecimal(1, false, true),
+                );
+                ui.add(
+                    egui::Slider::new(&mut enemy.unknown_4, 0..=u8::MAX)
+                        .text("Unknown 4")
+                        .hexadecimal(1, false, true),
+                );
+            });
+        });
 }
 
 fn execute<F: Future<Output = ()> + Send + 'static>(f: F) {
