@@ -1,6 +1,6 @@
 use async_std::task;
 use egui::Context;
-use ff8_battle_structure_gui::{BattleStructure, PackedBattleStructure};
+use ff8_battle_structure_gui::library::battle_structure::{BattleStructure, PackedBattleStructure};
 use rfd::AsyncFileDialog;
 use std::{
     future::Future,
