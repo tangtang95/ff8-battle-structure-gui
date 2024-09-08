@@ -61,6 +61,7 @@ jobs:
           mkdir release-files
           mv ./target/*windows*/${{ env.APP_NAME }}.exe ./release-files/${{env.APP_NAME }}-x86_64-pc-windows-msvc.exe
           mv ./target/*linux*/${{ env.APP_NAME }} ./release-files/${{ env.APP_NAME }}-x86_64-unknown-linux-gnu
+          chmod +x ./release-files/${{ env.APP_NAME }}-x86_64-unknown-linux-gnu
           ls -R
       - name: Create Release
         env:

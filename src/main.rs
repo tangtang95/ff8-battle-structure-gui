@@ -1,3 +1,5 @@
+#![windows_subsystem = "windows"]
+
 use async_std::task;
 use egui::{Color32, Context};
 use kyactus_ff8::library::{
