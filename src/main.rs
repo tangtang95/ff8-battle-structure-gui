@@ -54,8 +54,6 @@ impl eframe::App for BSApp {
             .frame(egui::Frame::none().inner_margin(4.0))
             .show(ctx, |ui| {
                 egui::menu::bar(ui, |ui| {
-                    egui::widgets::global_dark_light_mode_switch(ui);
-
                     ui.menu_button("File", |ui| {
                         ui.set_max_width(200.0);
 

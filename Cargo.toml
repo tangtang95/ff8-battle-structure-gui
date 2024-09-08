@@ -5,9 +5,7 @@ edition = "2021"
 
 [dependencies]
 egui = "0.28.1"
-eframe = { version = "0.28.1", features = [
-    "wgpu"
-] }
+eframe = "0.28.1"
 async-std = "1.13.0"
 anyhow = "1.0.86"
 binrw = "0.14.0"
