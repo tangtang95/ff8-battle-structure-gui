@@ -1,0 +1,71 @@
+name: CI
+
+on: [push]
+
+env:
+  RUST_VERSION: stable
+  APP_NAME: kyactus
+
+jobs:
+  build:
+    name: Build and test (${{ matrix.triplet }})
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            triplet: x86_64-unknown-linux-gnu
+            artifact: iroga
+          - os: windows-latest
+            triplet: x86_64-pc-windows-msvc
+            artifact: iroga.exe
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Rust tools
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ env.RUST_VERSION }}
+          target: ${{ matrix.triplet }}
+      - name: Cache Cargo Rust
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - run: cargo build --locked --release
+      - run: cargo test --locked --release
+      - name: Upload app
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.APP_NAME }}-${{ matrix.triplet }}
+          path: ${{ github.workspace }}/target/release/${{ matrix.artifact }}
+          retention-days: 1
+
+  release:
+    name: Release to Github
+    needs: build
+    if: ${{ contains(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./target
+      - name: Rename artifacts files
+        run: |
+          mkdir release-files
+          mv ./target/*windows*/${{ env.APP_NAME }}.exe ./release-files/${{env.APP_NAME }}-x86_64-pc-windows-msvc.exe
+          mv ./target/*linux*/${{ env.APP_NAME }} ./release-files/${{ env.APP_NAME }}-x86_64-unknown-linux-gnu
+          ls -R
+      - name: Create Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_VERSION=${GITHUB_REF#refs/*/}
+          gh release create $TAG_VERSION --generate-notes --latest -t "${{ env.APP_NAME }}-$TAG_VERSION" ./release-files/*
+
