@@ -1,6 +1,6 @@
 use async_std::task;
 use egui::{Color32, Context};
-use ff8_battle_structure_gui::library::{
+use kyactus_ff8::library::{
     battle_names::{ENEMY_NAMES, STAGE_NAMES},
     battle_structure::{BattleStructure, Enemy, PackedBattleStructure},
 };
