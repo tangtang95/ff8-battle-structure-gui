@@ -10,7 +10,7 @@ use std::{
     sync::mpsc::{channel, Receiver, Sender},
 };
 
-const BATTLE_STRUCTURE_NUMBER: usize = 1000;
+const BATTLE_STRUCTURE_NUMBER: usize = 1024;
 
 fn main() -> eframe::Result<()> {
     let native_options = eframe::NativeOptions::default();
@@ -78,8 +78,20 @@ impl eframe::App for BattleStructureApp {
                             ui.close_menu();
                         }
 
-                        if ui.button("Save").clicked() {
-                            // TODO
+                        if ui.button("Save as...").clicked() {
+                            let task = rfd::AsyncFileDialog::new().save_file();
+                            match write_packed_battle_structure(&self.battle_structure_list) {
+                                Ok(contents) => {
+                                    execute(async move {
+                                        let file = task.await;
+                                        if let Some(file) = file {
+                                            _ = file.write(contents.as_ref()).await;
+                                        }
+                                    });
+                                }
+                                Err(_) => todo!()
+                            };
+                            ui.close_menu();
                         }
                     });
                 });
@@ -282,4 +294,15 @@ fn read_battle_structures(bytes: &[u8]) -> anyhow::Result<Vec<BattleStructure>> 
         battle_structure_list.push(packed_bs.into_battle_structure());
     }
     Ok(battle_structure_list)
+}
+
+fn write_packed_battle_structure(
+    battle_structure_list: &Vec<BattleStructure>,
+) -> anyhow::Result<Vec<u8>> {
+    let mut bytes: Vec<u8> =
+        Vec::with_capacity(BATTLE_STRUCTURE_NUMBER * size_of::<PackedBattleStructure>());
+    for battle_structure in battle_structure_list {
+        bytes.extend_from_slice(battle_structure.as_packed_bytes()?.as_ref());
+    }
+    Ok(bytes)
 }
