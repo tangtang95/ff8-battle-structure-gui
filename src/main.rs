@@ -15,9 +15,12 @@ use std::{
 const BATTLE_STRUCTURE_NUMBER: usize = 1024;
 
 fn main() -> eframe::Result<()> {
-    let native_options = eframe::NativeOptions::default();
+    let native_options = eframe::NativeOptions {
+        viewport: egui::ViewportBuilder::default().with_inner_size([1024.0, 768.0]),
+        ..Default::default()
+    };
     eframe::run_native(
-        "FFVIII Battle Structure Editor",
+        "Kyactus - FF8 Battle Structure Editor",
         native_options,
         Box::new(|cc| Ok(Box::new(BattleStructureApp::new(cc)))),
     )
@@ -69,8 +72,9 @@ impl eframe::App for BattleStructureApp {
                         if ui.button("Open...").clicked() {
                             let sender = self.file_bytes_channel.0.clone();
                             let task = AsyncFileDialog::new()
+                                .set_title("Select scene.out file")
                                 .add_filter("scene.out", &["out"])
-                                .set_directory("/")
+                                .set_directory(".")
                                 .pick_file();
                             let ctx = ui.ctx().clone();
                             execute(async move {
@@ -113,28 +117,38 @@ impl eframe::App for BattleStructureApp {
 
         egui::CentralPanel::default().show(ctx, |ui| {
             if !self.battle_structure_list.is_empty() {
-                ui.add(
-                    egui::Slider::new(
+                ui.heading("Battle Structure");
+                frame().show(ui, |ui| {
+                    ui.label("Encounter ID");
+                    ui.add(egui::Slider::new(
                         &mut self.battle_structure_index,
                         0..=BATTLE_STRUCTURE_NUMBER - 1,
-                    )
-                    .text("Encounter ID"),
-                );
+                    ));
+                });
+                ui.separator();
 
                 match self
                     .battle_structure_list
                     .get_mut(self.battle_structure_index)
                 {
                     Some(battle_structure) => {
+                        ui.heading("Stage");
                         frame().show(ui, |ui| stage_contents(ui, battle_structure));
+                        ui.separator();
+                        ui.heading("Enemies");
                         frame().show(ui, |ui| {
                             enemies_contents(ui, battle_structure, &mut self.enemy_selected_index)
                         });
+                        ui.separator();
                     }
                     None => {
-                        ui.label("Battle structure not found!");
+                        ui.heading("Battle structure not found!");
                     }
                 }
+            } else {
+                ui.centered_and_justified(|ui| {
+                    ui.heading("Open a scene.out file to start editing it");
+                });
             }
         });
     }
@@ -153,46 +167,61 @@ fn stage_contents(ui: &mut egui::Ui, battle_structure: &mut BattleStructure) {
                 ui.selectable_value(&mut battle_structure.stage_id, i as u8, STAGE_NAMES[i]);
             });
         });
+    ui.add_space(16.0);
+    ui.columns(2, |cols| {
+        cols[0].vertical(|ui| {
+            ui.heading("Flags");
+            ui.columns(2, |cols| {
+                cols[0].vertical(|ui| {
+                    ui.checkbox(&mut battle_structure.flags.cannot_escape, "Cannot escape");
+                    ui.checkbox(&mut battle_structure.flags.no_exp, "No exp gained");
+                    ui.checkbox(
+                        &mut battle_structure.flags.scripted_battle,
+                        "Scripted battle",
+                    );
+                    ui.checkbox(&mut battle_structure.flags.show_timer, "Show timer");
+                });
 
-    ui.checkbox(&mut battle_structure.flags.cannot_escape, "Cannot escape");
-    ui.checkbox(&mut battle_structure.flags.no_exp, "No exp gained");
-    ui.checkbox(
-        &mut battle_structure.flags.scripted_battle,
-        "Scripted battle",
-    );
-    ui.checkbox(&mut battle_structure.flags.show_timer, "Show timer");
-    ui.checkbox(
-        &mut battle_structure.flags.force_back_attack,
-        "Force back attack",
-    );
-    ui.checkbox(
-        &mut battle_structure.flags.force_surprise_attack,
-        "Force surprise attack",
-    );
-    ui.checkbox(
-        &mut battle_structure.flags.disable_win_fanfare,
-        "Disable victory fanfare",
-    );
-    ui.checkbox(
-        &mut battle_structure.flags.disable_exp_screen,
-        "Do not show exp. screen",
-    );
-    ui.add(
-        egui::Slider::new(&mut battle_structure.main_camera.number, 0..=3)
-            .text("Main camera number"),
-    );
-    ui.add(
-        egui::Slider::new(&mut battle_structure.main_camera.animation, 0..=7)
-            .text("Main camera animation"),
-    );
-    ui.add(
-        egui::Slider::new(&mut battle_structure.secondary_camera.number, 0..=3)
-            .text("Secondary camera number"),
-    );
-    ui.add(
-        egui::Slider::new(&mut battle_structure.secondary_camera.animation, 0..=7)
-            .text("Secondary camera animation"),
-    );
+                cols[1].vertical(|ui| {
+                    ui.checkbox(
+                        &mut battle_structure.flags.force_back_attack,
+                        "Force back attack",
+                    );
+                    ui.checkbox(
+                        &mut battle_structure.flags.force_surprise_attack,
+                        "Force surprise attack",
+                    );
+                    ui.checkbox(
+                        &mut battle_structure.flags.disable_win_fanfare,
+                        "Disable victory fanfare",
+                    );
+                    ui.checkbox(
+                        &mut battle_structure.flags.disable_exp_screen,
+                        "Do not show exp. screen",
+                    );
+                });
+            })
+        });
+        cols[1].vertical(|ui| {
+            ui.heading("Camera");
+            ui.add(
+                egui::Slider::new(&mut battle_structure.main_camera.number, 0..=3)
+                    .text("Main camera number"),
+            );
+            ui.add(
+                egui::Slider::new(&mut battle_structure.main_camera.animation, 0..=7)
+                    .text("Main camera animation"),
+            );
+            ui.add(
+                egui::Slider::new(&mut battle_structure.secondary_camera.number, 0..=3)
+                    .text("Secondary camera number"),
+            );
+            ui.add(
+                egui::Slider::new(&mut battle_structure.secondary_camera.animation, 0..=7)
+                    .text("Secondary camera animation"),
+            );
+        });
+    });
 }
 
 fn enemies_contents(
@@ -200,8 +229,8 @@ fn enemies_contents(
     battle_structure: &mut BattleStructure,
     enemy_selected_index: &mut usize,
 ) {
-    ui.horizontal(|ui| {
-        ui.vertical(|ui| {
+    ui.columns(2, |cols| {
+        cols[0].vertical(|ui| {
             for i in 0..battle_structure.enemies.len() {
                 let enemy = &battle_structure.enemies[i];
                 let enemy_name = format!(
@@ -231,73 +260,72 @@ fn enemies_contents(
             }
         });
 
-        ui.vertical(
+        cols[1].vertical(
             |ui| match battle_structure.enemies.get_mut(*enemy_selected_index) {
                 Some(enemy) => {
                     enemy_contents(ui, enemy);
                 }
                 None => {
-                    ui.label("enemy not found!");
+                    ui.heading("Enemy not found!");
                 }
             },
         );
-    });
+    })
 }
 
 fn enemy_contents(ui: &mut egui::Ui, enemy: &mut Enemy) {
-    frame().show(ui, |ui| {
-        egui::ComboBox::from_label("Enemy")
-            .selected_text(
-                ENEMY_NAMES
-                    .get(enemy.id as usize)
-                    .unwrap_or(&"Invalid enemy id!")
-                    .to_string(),
-            )
-            .show_ui(ui, |ui| {
-                (0..ENEMY_NAMES.len()).for_each(|i| {
-                    ui.selectable_value(&mut enemy.id, i as u8, ENEMY_NAMES[i]);
-                });
+    egui::ComboBox::from_label("Enemy")
+        .selected_text(
+            ENEMY_NAMES
+                .get(enemy.id as usize)
+                .unwrap_or(&"Invalid enemy id!")
+                .to_string(),
+        )
+        .show_ui(ui, |ui| {
+            (0..ENEMY_NAMES.len()).for_each(|i| {
+                ui.selectable_value(&mut enemy.id, i as u8, ENEMY_NAMES[i]);
             });
-        ui.add(egui::Slider::new(&mut enemy.level, 0..=255).text("Level"));
-        ui.checkbox(&mut enemy.enabled, "Enabled");
-        ui.checkbox(&mut enemy.not_loaded, "NOT loaded");
-        ui.checkbox(&mut enemy.invisible, "NOT visible");
-        ui.checkbox(&mut enemy.untargetable, "NOT targetable");
-
-        ui.add(egui::Slider::new(&mut enemy.coordinate.x, i16::MIN..=i16::MAX).text("X"));
-        ui.add(egui::Slider::new(&mut enemy.coordinate.y, i16::MIN..=i16::MAX).text("Y"));
-        ui.add(egui::Slider::new(&mut enemy.coordinate.z, i16::MIN..=i16::MAX).text("Z"));
-
-        ui.collapsing("Advanced options", |ui| {
-            ui.add(
-                egui::Slider::new(&mut enemy.unknown_1, 0..=u16::MAX)
-                    .text("Unknown 1")
-                    .hexadecimal(1, false, true),
-            );
-            ui.add(
-                egui::Slider::new(&mut enemy.unknown_2, 0..=u16::MAX)
-                    .text("Unknown 2")
-                    .hexadecimal(1, false, true),
-            );
-            ui.add(
-                egui::Slider::new(&mut enemy.unknown_3, 0..=u16::MAX)
-                    .text("Unknown 3")
-                    .hexadecimal(1, false, true),
-            );
-            ui.add(
-                egui::Slider::new(&mut enemy.unknown_4, 0..=u8::MAX)
-                    .text("Unknown 4")
-                    .hexadecimal(1, false, true),
-            );
         });
+    ui.add(egui::Slider::new(&mut enemy.level, 0..=255).text("Level"));
+    ui.checkbox(&mut enemy.enabled, "Enabled");
+    ui.checkbox(&mut enemy.not_loaded, "NOT loaded");
+    ui.checkbox(&mut enemy.invisible, "NOT visible");
+    ui.checkbox(&mut enemy.untargetable, "NOT targetable");
+
+    ui.add_space(8.0);
+    ui.label("Coordinates");
+    ui.add(egui::Slider::new(&mut enemy.coordinate.x, i16::MIN..=i16::MAX).text("X"));
+    ui.add(egui::Slider::new(&mut enemy.coordinate.y, i16::MIN..=i16::MAX).text("Y"));
+    ui.add(egui::Slider::new(&mut enemy.coordinate.z, i16::MIN..=i16::MAX).text("Z"));
+
+    ui.collapsing("Advanced options", |ui| {
+        ui.add(
+            egui::Slider::new(&mut enemy.unknown_1, 0..=u16::MAX)
+                .text("Unknown 1")
+                .hexadecimal(1, false, true),
+        );
+        ui.add(
+            egui::Slider::new(&mut enemy.unknown_2, 0..=u16::MAX)
+                .text("Unknown 2")
+                .hexadecimal(1, false, true),
+        );
+        ui.add(
+            egui::Slider::new(&mut enemy.unknown_3, 0..=u16::MAX)
+                .text("Unknown 3")
+                .hexadecimal(1, false, true),
+        );
+        ui.add(
+            egui::Slider::new(&mut enemy.unknown_4, 0..=u8::MAX)
+                .text("Unknown 4")
+                .hexadecimal(1, false, true),
+        );
     });
 }
 
 fn frame() -> egui::Frame {
     egui::Frame::none()
-        .rounding(egui::Rounding::from(4.0))
-        .stroke(egui::Stroke::new(1.0, egui::Color32::DARK_GRAY))
         .inner_margin(8.0)
+        .outer_margin(4.0)
 }
 
 fn error_dialog(message: &str) -> impl Future<Output = rfd::MessageDialogResult> {
@@ -318,7 +346,11 @@ fn read_battle_structures(bytes: &[u8]) -> anyhow::Result<Vec<BattleStructure>> 
     for i in 0..BATTLE_STRUCTURE_NUMBER {
         let offset = i * size_of::<PackedBattleStructure>();
         let packed_bs = PackedBattleStructure::try_from_bytes(
-            &bytes[offset..offset + size_of::<PackedBattleStructure>()],
+            bytes
+                .get(offset..offset + size_of::<PackedBattleStructure>())
+                .ok_or(anyhow::anyhow!(
+                    "Could not retrieve data. File size not as expected!"
+                ))?,
         )?;
         battle_structure_list.push(packed_bs.into_battle_structure());
     }
