@@ -342,6 +342,10 @@ fn execute<F: Future<Output = ()> + Send + 'static>(f: F) {
 }
 
 fn read_battle_structures(bytes: &[u8]) -> anyhow::Result<Vec<BattleStructure>> {
+    if bytes.len() != size_of::<PackedBattleStructure>() * BATTLE_STRUCTURE_NUMBER {
+        return Err(anyhow::anyhow!("Incorrect bytes size"));
+    }
+
     let mut battle_structure_list = Vec::with_capacity(BATTLE_STRUCTURE_NUMBER);
     for i in 0..BATTLE_STRUCTURE_NUMBER {
         let offset = i * size_of::<PackedBattleStructure>();
